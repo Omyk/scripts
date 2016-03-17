@@ -12,8 +12,7 @@
 void init_imu_msg(sensor_msgs::Imu* imu_msg)
 {
 	//time stamp
-	imu_msg->header.stamp.secs = ros::Time::now().toSec;
-	imu_msg->header.stamp.nsecs = ros::Time::now().toNSec;
+	imu_msg->header.stamp = ros::Time::now();
 
 	imu_msg->orientation.x = 0.0f;
 	imu_msg->orientation.y = 0.0f;
@@ -40,8 +39,7 @@ void init_imu_msg(sensor_msgs::Imu* imu_msg)
 void init_mf_msg(sensor_msgs::MagneticField* mf_msg)
 {
 	//time stamp
-	mf_msg->header.stamp.secs = ros::Time::now().toSec;
-	mf_msg->header.stamp.nsecs = ros::Time::now().toNSec;
+	mf_msg->header.stamp = ros::Time::now();
 
 	mf_msg->magnetic_field.x = 0.0f;
 	mf_msg->magnetic_field.y = 0.0f;
@@ -57,10 +55,9 @@ void init_mf_msg(sensor_msgs::MagneticField* mf_msg)
 void update_imu_msg(sensor_msgs::Imu* imu_msg, InertialSensor* sensor)
 {
 	//time stamp
-	imu_msg->header.stamp.secs = ros::Time::now().toSec;
-	imu_msg->header.stamp.nsecs = ros::Time::now().toNSec;
+	imu_msg->header.stamp = ros::Time::now();
 
-	float ax, ay, az, gx, gy, gz, mx, my, mz;
+	float ax, ay, az, gx, gy, gz;
 
 	sensor->update();
 
@@ -87,10 +84,9 @@ void update_imu_msg(sensor_msgs::Imu* imu_msg, InertialSensor* sensor)
 void update_mf_msg(sensor_msgs::MagneticField* mf_msg, InertialSensor* sensor)
 {
 	//time stamp
-	mf_msg->header.stamp.secs = ros::Time::now().toSec;
-	mf_msg->header.stamp.nsecs = ros::Time::now().toNSec;
+	mf_msg->header.stamp = ros::Time::now();
 
-	mx, my, mz;
+	float mx, my, mz;
 
 	sensor->update();
 
@@ -147,7 +143,7 @@ int main(int argc, char **argv)
 		update_mf_msg(&mf_msg, sensor);
 
 		imu_pub.publish(imu_msg);
-		imu_pub.publish(imu_msg);
+		mf_pub.publish(mf_msg);
 
 		ros::spinOnce();
 
