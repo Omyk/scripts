@@ -6,10 +6,15 @@
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 #include "sensor_msgs/Imu.h"
+#include "sensor_msgs/MagneticField.h"
 #include <sstream>
 
-void init_msg(sensor_msgs::Imu* imu_msg)
+void init_imu_msg(sensor_msgs::Imu* imu_msg)
 {
+	//time stamp
+	imu_msg->header.stamp.secs = ros::Time::now().toSec;
+	imu_msg->header.stamp.nsecs = ros::Time::now().toNSec;
+
 	imu_msg->orientation.x = 0.0f;
 	imu_msg->orientation.y = 0.0f;
 	imu_msg->orientation.z = 0.0f;
@@ -23,16 +28,37 @@ void init_msg(sensor_msgs::Imu* imu_msg)
 	imu_msg->linear_acceleration.y = 0.0f;
 	imu_msg->linear_acceleration.z = 0.0f;
 
+	//Create a cov matrix of [1 0 0; 0 1 0; 0 0 1]
 	for(int i = 0; i < 9; i++)
 	{
-		imu_msg->orientation_covariance[i] = 0.0f;
-		imu_msg->angular_velocity_covariance[i] = 0.0f;
-		imu_msg->linear_acceleration_covariance[i] = 0.0f;
+		imu_msg->orientation_covariance[i] = !(i%4);
+		imu_msg->angular_velocity_covariance[i] = !(i%4);
+		imu_msg->linear_acceleration_covariance[i] = !(i%4);
 	}
 }
 
-void update_msg(sensor_msgs::Imu* imu_msg, InertialSensor* sensor)
+void init_mf_msg(sensor_msgs::MagneticField* mf_msg)
 {
+	//time stamp
+	mf_msg->header.stamp.secs = ros::Time::now().toSec;
+	mf_msg->header.stamp.nsecs = ros::Time::now().toNSec;
+
+	mf_msg->magnetic_field.x = 0.0f;
+	mf_msg->magnetic_field.y = 0.0f;
+	mf_msg->magnetic_field.z = 0.0f;
+
+	//Create a cov matrix of [1 0 0; 0 1 0; 0 0 1]
+	for(int i = 0; i < 9; i++)
+	{
+		mf_msg->magnetic_field_covariance[i] = !(i%4);
+	}
+}
+
+void update_imu_msg(sensor_msgs::Imu* imu_msg, InertialSensor* sensor)
+{
+	//time stamp
+	imu_msg->header.stamp.secs = ros::Time::now().toSec;
+	imu_msg->header.stamp.nsecs = ros::Time::now().toNSec;
 
 	float ax, ay, az, gx, gy, gz, mx, my, mz;
 
@@ -56,7 +82,25 @@ void update_msg(sensor_msgs::Imu* imu_msg, InertialSensor* sensor)
 
 	ROS_INFO("Accelerometer : X = %+7.3f, Y = %+7.3f, Z = %+7.3f", ax, ay, az);
 	ROS_INFO("Gyroscope : X = %+7.3f, Y = %+7.3f, Z = %+7.3f", gx, gy, gz);
-	
+}
+
+void update_mf_msg(sensor_msgs::MagneticField* mf_msg, InertialSensor* sensor)
+{
+	//time stamp
+	mf_msg->header.stamp.secs = ros::Time::now().toSec;
+	mf_msg->header.stamp.nsecs = ros::Time::now().toNSec;
+
+	mx, my, mz;
+
+	sensor->update();
+
+        sensor->read_magnetometer(&mx, &my, &mz);
+
+	mf_msg->magnetic_field.x = mx;
+	mf_msg->magnetic_field.y = my;
+	mf_msg->magnetic_field.z = mz;
+
+	ROS_INFO("Magnetic Field : X = %+7.3f, Y = %+7.3f, Z = %+7.3f", mx, my, mz);
 }
 
 int main(int argc, char **argv)
@@ -64,9 +108,10 @@ int main(int argc, char **argv)
  	/***********************/
 	/* Initialize The Node */
 	/***********************/
-	ros::init(argc, argv, "imu_readings");
+	ros::init(argc, argv, "imu_lsm9ds1_handler");
 	ros::NodeHandle n;
-	ros::Publisher imu_pub = n.advertise<sensor_msgs::Imu>("imu_adv", 1000);
+	ros::Publisher imu_pub = n.advertise<sensor_msgs::Imu>("imu_readings", 1000);
+	ros::Publisher mf_pub = n.advertise<sensor_msgs::MagneticField>("mag_readings", 1000);
 
 	//running rate = 2 Hz
 	ros::Rate loop_rate(2);
@@ -75,8 +120,8 @@ int main(int argc, char **argv)
 	/* Initialize the Sensor */
 	/*************************/
 
-	printf("Selected: MPU9250\n");
-	InertialSensor* sensor = new MPU9250();
+	printf("Selected: LSM9DS1\n");
+	InertialSensor* sensor = new LSM9DS1();
 
 	/***************/
 	/* Test Sensor */
@@ -93,12 +138,16 @@ int main(int argc, char **argv)
 	{
 
 		sensor_msgs::Imu imu_msg;
+		sensor_msgs::MagneticField mf_msg;
 
-		init_msg(&imu_msg);
+		init_imu_msg(&imu_msg);
+		init_mf_msg(&mf_msg);
 		
-		update_msg(&imu_msg, sensor);
+		update_imu_msg(&imu_msg, sensor);
+		update_mf_msg(&mf_msg, sensor);
 
-		imu_pub.publish(sensor_msgs);
+		imu_pub.publish(imu_msg);
+		imu_pub.publish(imu_msg);
 
 		ros::spinOnce();
 
