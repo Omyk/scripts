@@ -1,11 +1,11 @@
-#include "Navio/MPU9250.h"
-#include "Navio/LSM9DS1.h"
-#include "Navio/Util.h"
+#include "MPU9250.h"
+#include "LSM9DS1.h"
+#include "Util.h"
 #include <unistd.h>
 
 #include "ros/ros.h"
 #include "std_msgs/String.h"
-#include "common_msgs/sensor_msgs"
+#include "sensor_msgs/Imu.h"
 #include <sstream>
 
 void init_msg(sensor_msgs::Imu* imu_msg)
@@ -15,26 +15,20 @@ void init_msg(sensor_msgs::Imu* imu_msg)
 	imu_msg->orientation.z = 0.0f;
 	imu_msg->orientation.w = 0.0f;
 
-	imu_msg->orientation_covariance =      {1, 0, 0,
-				 		0, 1, 0,
-				 		0, 0, 1};
-
 	imu_msg->angular_velocity.x = 0.0f;
 	imu_msg->angular_velocity.y = 0.0f;
 	imu_msg->angular_velocity.z = 0.0f;
-
-	imu_msg->angular_velocity_covariance = {1, 0, 0,
-				 		0, 1, 0,
-				 		0, 0, 1};
 
 	imu_msg->linear_acceleration.x = 0.0f;
 	imu_msg->linear_acceleration.y = 0.0f;
 	imu_msg->linear_acceleration.z = 0.0f;
 
-	imu_msg->linear_acceleration_covariance =      {1, 0, 0,
-				 			0, 1, 0,
-				 			0, 0, 1};
-
+	for(int i = 0; i < 9; i++)
+	{
+		imu_msg->orientation_covariance[i] = 0.0f;
+		imu_msg->angular_velocity_covariance[i] = 0.0f;
+		imu_msg->linear_acceleration_covariance[i] = 0.0f;
+	}
 }
 
 void update_msg(sensor_msgs::Imu* imu_msg, InertialSensor* sensor)
