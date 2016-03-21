@@ -19,8 +19,8 @@ int main(int argc, char **argv)
 	ros::NodeHandle n;
 	ros::Publisher remote_pub = n.advertise<sensor_msgs::Imu>("remote_readings", 1000);
 	
-	//running rate = 2 Hz
-	ros::Rate loop_rate(2);
+	//running rate = 30 Hz
+	ros::Rate loop_rate(30);
 
 	/*******************************************/
 	/* Initialize the RC input, and PWM output */
@@ -54,16 +54,15 @@ int main(int argc, char **argv)
 	{
 
 		//read input from rc
-		servo_input = rcin.read(0); // Roll steering
-		motor_input = rcin.read(2); // Throttle
+		servo_input = rcin.read(2); // Roll steering
+		motor_input = rcin.read(3); // Throttle
 
 		//write readings on pwm output
-		motor.set_duty_cycle(MOTOR_PWM_OUT, motor_input); 
-		servo.set_duty_cycle(SERVO_PWM_OUT, servo_input);
+		///motor.set_duty_cycle(MOTOR_PWM_OUT, motor_input); 
+		///servo.set_duty_cycle(SERVO_PWM_OUT, servo_input);
 		
 		//debug info
-		ROS_INFO("Thrust usec = %d", motor_input);
-		ROS_INFO("Steering usec = %d", servo_input)
+		ROS_INFO("Thrust usec = %d    ---   Steering usec = %d", motor_input, servo_input);
 
 		/*sensor_msgs::Imu imu_msg;
 		sensor_msgs::MagneticField mf_msg;
@@ -76,7 +75,7 @@ int main(int argc, char **argv)
 
 		imu_pub.publish(imu_msg);
 		mf_pub.publish(mf_msg);
-*/
+		*/
 		ros::spinOnce();
 
 		loop_rate.sleep();
