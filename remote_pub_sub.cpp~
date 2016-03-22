@@ -7,6 +7,7 @@
 #include "std_msgs/Float64MultiArray.h"
 #include "std_msgs/MultiArrayLayout.h"
 #include "std_msgs/MultiArrayDimension.h"
+#include "std_msgs/Float64.h"
 #include <sstream>
 
 #define MOTOR_PWM_OUT 9
@@ -19,7 +20,7 @@ int main(int argc, char **argv)
 	/***********************/
 	ros::init(argc, argv, "remote_reading_handler");
 	ros::NodeHandle n;
-	ros::Publisher remote_pub = n.advertise<sensor_msgs::Float64MultiArray>("remote_readings", 1000);
+	ros::Publisher remote_pub = n.advertise<std_msgs::Float64MultiArray>("remote_readings", 1000);
 	
 	//running rate = 30 Hz
 	ros::Rate loop_rate(30);
@@ -53,13 +54,13 @@ int main(int argc, char **argv)
 	int servo_input = 0;
 
 	//msg stuff
-	float a = [0.0, 0.0]
-	MultiArrayDimension dim;
-	dim.size = length(a);
+	std_msgs::float64 a[] = {0.0, 0.0};
+	std_msgs::MultiArrayDimension dim;
+	dim.size = sizeof(a);
 	dim.label = "REMOTEmsg";
-	dim.stride = length(a);
+	dim.stride = sizeof(a);
 
-	Float64MultiArray apub;
+	std_msgs::Float64MultiArray apub;
 	apub.data = a;
 	apub.layout.dim.append(dim);
 	apub.layout.data_offset = 0;
