@@ -4,10 +4,12 @@
 #include <unistd.h>
 
 #include "ros/ros.h"
-#include "std_msgs/String.h"
+#include "std_msgs/Float64MultiArray.h"
+#include "std_msgs/MultiArrayLayout.h"
+#include "std_msgs/MultiArrayDimension.h"
 #include <sstream>
 
-#define MOTOR_PWM_OUT 0
+#define MOTOR_PWM_OUT 9
 #define SERVO_PWM_OUT 1
 
 int main(int argc, char **argv)
@@ -17,7 +19,7 @@ int main(int argc, char **argv)
 	/***********************/
 	ros::init(argc, argv, "remote_reading_handler");
 	ros::NodeHandle n;
-	ros::Publisher remote_pub = n.advertise<sensor_msgs::Imu>("remote_readings", 1000);
+	ros::Publisher remote_pub = n.advertise<sensor_msgs::Float64MultiArray>("remote_readings", 1000);
 	
 	//running rate = 30 Hz
 	ros::Rate loop_rate(30);
@@ -26,7 +28,7 @@ int main(int argc, char **argv)
 	/* Initialize the RC input, and PWM output */
 	/*******************************************/
 
-	RCInput rcin{};
+	RCInput rcin;
 	rcin.init();
 	PWM servo;
 	PWM motor;
@@ -44,11 +46,23 @@ int main(int argc, char **argv)
 	motor.enable(MOTOR_PWM_OUT);
 	servo.enable(SERVO_PWM_OUT);
 
-	motor.ser_period(MOTOR_PWM_OUT, 50); //frequency 50Hz
+	motor.set_period(MOTOR_PWM_OUT, 50); //frequency 50Hz
 	servo.set_period(SERVO_PWM_OUT, 50); 
 
 	int motor_input = 0;
 	int servo_input = 0;
+
+	//msg stuff
+	float a = [0.0, 0.0]
+	MultiArrayDimension dim;
+	dim.size = length(a);
+	dim.label = "REMOTEmsg";
+	dim.stride = length(a);
+
+	Float64MultiArray apub;
+	apub.data = a;
+	apub.layout.dim.append(dim);
+	apub.layout.data_offset = 0;
 
 	while (ros::ok())
 	{
@@ -58,11 +72,19 @@ int main(int argc, char **argv)
 		motor_input = rcin.read(3); // Throttle
 
 		//write readings on pwm output
-		///motor.set_duty_cycle(MOTOR_PWM_OUT, motor_input); 
-		///servo.set_duty_cycle(SERVO_PWM_OUT, servo_input);
+		motor.set_duty_cycle(MOTOR_PWM_OUT, ((float)motor_input)/1000.0f); 
+		servo.set_duty_cycle(SERVO_PWM_OUT, ((float)servo_input)/1000.0f);
 		
+		//save values into msg container a
+		a[0] = motor_input;
+		a[1] = servo_input;
+
 		//debug info
-		ROS_INFO("Thrust usec = %d    ---   Steering usec = %d", motor_input, servo_input);
+		ROS_INFO("Thrust usec = %d    ---   Steering usec = %d", a[0], a[1]);
+	
+		apub.data = a;
+
+		remote_pub.publish(apub);
 
 		/*sensor_msgs::Imu imu_msg;
 		sensor_msgs::MagneticField mf_msg;
