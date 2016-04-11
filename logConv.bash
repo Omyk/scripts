@@ -24,6 +24,7 @@ do
 	ext="_*"
 	mv $file $f/
 	mv $f$ext $f/
+	mv $f ../logs/
 	echo "done"
 done
 
